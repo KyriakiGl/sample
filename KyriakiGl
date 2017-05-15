@@ -1,0 +1,176 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue May  2 11:01:15 2017
+
+"""
+
+import json
+import urllib
+
+def jsonToList():
+    d = urllib.request.urlopen('https://www.unisport.dk/api/sample/')
+    data = json.loads(d.read().decode())
+    products=data['products']#creates a list of dictionaries
+    return products
+
+#%%
+"""A function that converts numbers from a list of strings to a list of floats"""
+def stringTofloat(key):
+    priceList=jsonToList() 
+    prices = [li[key] for li in priceList]#chooses the values that share the same key  
+    newp=[]
+    for p in prices:
+        prices=p.replace(',', '.')#the comma in the numbers is replaced by a dot,in order to enable their convertion to a float 
+        newp.append(prices)
+        newp = [float(j) for j in newp]#newp list is converted to list of floats
+    return newp 
+#%%
+"""A function that returns the the first 10 objects ordered with the cheapest first"""
+def ten_lowest():  
+    flist=stringTofloat('price')#price key is chosen as an argument for the stringTofloat and its values are are extracted in a list of floats, to be able to be sorted
+    flist.sort()#flist is sorted with ascending values
+    flist=flist[0:10]#the first ten items of the sorted list are chosen
+    return flist
+#%%
+"""A function that returns the products where kids=1 ordered with the cheapest first"""
+import numpy
+
+def kids():
+    kids_priceList=jsonToList()
+    kids=stringTofloat('kids')# the values of kids are extracted in a list and converted into integers so as to enable us to use them later in the if statement 
+    product=[li['name'] for li in kids_priceList]#the values for name_key are selected from the original list
+    price=stringTofloat('price')
+    new_kids = []#new lista are generated to save the selected data
+    new_product = []
+    new_price=[]
+    """every new list, contains the items with the same index as the one for kids=1"""
+    for i,j,k in zip(kids,product,price):#it assigns a value to every list, to iterate the items in the lists 
+        if i==1:#if the item in kids is equal to 1
+            new_kids.append(i)#it is selected for the new_kids list
+            new_product.append(j)#and for the same index the items in the new_product and new_price
+            new_price.append(k)
+    new_product = numpy.array(new_product)#an array allows me to sort multiple arrays according to one
+    new_price = numpy.array(new_price)
+    inds = new_price.argsort()#nreturns the indeces that sorts the new_price list in an ascending value
+    sorted_products=new_product[inds]# the indeces are used to sort the new_product list
+    return sorted_products       
+#%%
+"""A function that returns the individual product"""    
+def product_id(the_id):
+    p_id=jsonToList()
+    for item in p_id:
+         if item['id'] == the_id:#chooses the specific value inside every dictionary in the list
+            unique_product = item
+         else:
+             unique_product = None#in case wrong id was inserted
+         print("Insert right argument,as a string")
+         return unique_product     
+#%%
+"""A function that returns the next 10 items, found on page=2 in the first page """
+
+def pagination():
+    d1 = urllib.request.urlopen('https://www.unisport.dk/api/sample/')
+    data1 = json.loads(d1.read().decode())
+        
+    d2 = urllib.request.urlopen('https://www.unisport.dk/api/sample/?page=2')
+    data2 = json.loads(d2.read().decode())
+    products2=data2['products']#creates a list of dictionaries
+    
+    sliced=products2[0:10]#the 10 first products are extracted from page=2
+    update_data1={'end-point':'"/api/sample/',}#opens an empty dictionary to store the new values for the json file
+    for item in data1.items():
+        update_data1['products'] = sliced#the sliced list is inserted in the empty dictionary to be saved in a json 
+    json_str = json.dumps(update_data1)#the dictionary is saved as a  jason string
+    data = json.loads(json_str)
+    return data
+#%%
+"""Bonus"""
+
+"""A function that creates a new dicttionary manually filled"""
+def create_product():
+    is_customizable = input('Enter string_number: ')#input for every key inside the dictionary, the answer will be given manually
+    delivery = input('Enter expected length of delivery: ')
+    kids=input('Enter kids number: ')
+    name=input('Enter the name of the product: ')
+    sizes=input('Enter available sizes: ')
+    kid_adult=input('Enter kid-adult number: ')
+    free_porto=input('Enter free-porto number: ')
+    img=input('Enter image_url: ')
+    package=input('Enter package number:')
+    price=input('Enter new price: ')
+    url=input('Enter url: ')
+    online=input('Enter online number: ')
+    price_old=input('Enter previous price: ')
+    currency=input('Enter currency: ')
+    img_url=input('Enter img_url: ')
+    id_=input('Enter id_number: ')
+    women=input('Enter women number: ')
+    new_product={'is_customizable':is_customizable,'delivery':delivery,'kids':kids,'name':name,'sizes':sizes,'kid_adult':kid_adult,'free_porto':free_porto,'image':img,'package':package,'price':price,'url':url,'online':online,'price_old':price_old,'currency':currency,'img_url':img_url,'id':id_,'women':women}
+    #new_produst is the dictionary that will be filled with the input given by the user
+    return new_product
+    with open(jsonToList(), 'w') as file:
+        json.dump(new_product, file)#it updates the file
+        
+#%% 
+"""A function to delete an individual product """   
+def delete_product(the_id): 
+    unique_product=product_id(the_id)#calls the function product_id to find the product
+    del unique_product
+
+#%%
+def edit_product(the_id,key,new_value):
+    individual_product=product_id(the_id)
+    individual_product[key]=new_value
+    return individual_product
+    
+#%%
+"""A function that creates a menu for the user to choses what should be done"""
+def menu():
+    print('Choose one of the following options?')#when the menu function is called,the following menu appears
+    print('   n) New Product')                   #for the user to choose from
+    print('   d) Delete Product')
+    print('   e) Edit Product')
+    print('   q) Quit')
+    choice = input('Choice: ')    
+    if choice.lower() in ['n','d','e','q']:
+        return choice.lower()#in case a capital letter is chosen it is suppressed to be lower case
+    else:
+        print(choice +"?")#in case another letter or caracter is chosen, the chice appears along with a '?'
+        print('Invalid option')
+        return None
+#%% 
+"""The main_loop is the one that the user can use in order to use the above functions"""       
+def main_loop():    
+    d = urllib.request.urlopen('https://www.unisport.dk/api/sample/')
+    data = json.loads(d.read().decode())
+    
+    while True:
+        choice = menu()
+        if choice == None:# if other than n,d,q is chosen,the print statement
+            continue      #at the end of the loop appears and the menu reappears
+        if choice == 'q':
+            print( 'Exiting...')
+            break         #jumps out of the loop
+        elif choice == 'n':
+            create_product()
+        elif choice == 'd':
+            the_id = input('Which product do you want to delete? ')#it asks for the id that is the agument
+            print(the_id)                                          #to call the delete_product function
+            delete_product(the_id)
+        elif choice== 'e':
+            the_id = input('Which product do you want to edit? ')
+            print(the_id)
+            key = input('Enter the key: ')#it asks for the id that is the agument
+            print(key)
+            new_value = input('Enter the new value: ')#it asks for the id that is the agument
+            print(new_value)
+            edit_product(the_id,key,new_value)
+        else:
+            print('Invalid choice.')
+            
+    with open(jsonToList(), 'w') as file:
+        json.dump(data, file)#updates the json file
+ 
+    
+if __name__ == '__main__':#makes this program start running at main_loop()
+    main_loop()           # when executed as a stand-alone program 
